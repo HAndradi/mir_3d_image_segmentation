@@ -216,11 +216,5 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(example src/example.cpp)
-target_link_libraries(example ${catkin_LIBRARIES})
-add_executable(scan2cloud src/scan2cloud.cpp)
-target_link_libraries(scan2cloud ${catkin_LIBRARIES})
 add_executable(segment src/segment.cpp)
 target_link_libraries(segment ${catkin_LIBRARIES})
-add_executable(segment_old src/segment_old.cpp)
-target_link_libraries(segment_old ${catkin_LIBRARIES})
