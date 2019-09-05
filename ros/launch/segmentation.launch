@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="input_pointcloud_topic" default="/arm_cam3d/depth_registered/points" />
+
+    <node pkg="mir_3d_image_segmentation" type="segment" name="pcl_segmentation" output="screen">
+        <remap from="~input" to="$(arg input_pointcloud_topic)" />  
+        <param name="publish_output_pc" value="false" type="bool" />
+        <param name="output_pc_frame" value="arm_camera_link" type="str" />
+    </node>
+
+</launch>
+

@@ -25,6 +25,8 @@ add_compile_options(-std=c++11
 
 ## Generate messages in the 'msg' folder
 add_message_files(
+  DIRECTORY
+  ros/msg
   FILES
   Pixel_Coord.msg
   Cluster_Pixels.msg
@@ -50,5 +52,5 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(segment src/segment.cpp)
+add_executable(segment ros/src/segment.cpp)
 target_link_libraries(segment ${catkin_LIBRARIES})
