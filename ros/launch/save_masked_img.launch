@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="input_image_topic" default="/arm_cam3d/color/image_raw" />
+    <arg name="save_images" default="true" />
+    <arg name="cluster_topic" default="pcl_segmentation/clusters" />
+
+    <node pkg="mir_3d_image_segmentation" type="cluster_to_img" name="cluster_to_img" output="screen">
+        <remap from="~input" to="$(arg input_image_topic)" />
+        <remap from="~clusters" to="$(arg cluster_topic)" />
+        <param name="save_images" value="$(arg save_images)" type="bool" />
+    </node>
+
+</launch>
+

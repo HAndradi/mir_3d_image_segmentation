@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+
 import cv2
 import numpy as np
 from datetime import datetime
@@ -12,6 +13,7 @@ from message_filters import ApproximateTimeSynchronizer, Subscriber
 
 def synchronized_msg_cb(img_msg, cluster_msg):
     global save_imgs_flag
+    print("in here")
     img = cv2.cvtColor(bridge.imgmsg_to_cv2(img_msg),cv2.COLOR_BGR2RGB)
     cluster_img = np.zeros((cluster_msg.height, cluster_msg.width, 3), np.uint8)
     for cluster in cluster_msg.clusters:
@@ -66,13 +68,13 @@ def synchronized_msg_cb(img_msg, cluster_msg):
     mask2 = cv2.cvtColor(resized_mask, cv2.COLOR_GRAY2BGR)
     debug_img = cv2.bitwise_and(img, mask2)
 
-    cv2.imshow('image', debug_img)
-    k = cv2.waitKey(3) & 0xff
-    if k == ord('s'):
-        save_imgs_flag = True
-    else: 
-        save_imgs_flag = False
-        #cv2.imwrite('opticalfb.png',frame2)
+    #cv2.imshow('image', debug_img)
+    #k = cv2.waitKey(3) & 0xff
+    #if k == ord('s'):
+    #    save_imgs_flag = True
+    #else: 
+    #    save_imgs_flag = False
+    #    #cv2.imwrite('opticalfb.png',frame2)
 
     cluster_img_ros = bridge.cv2_to_imgmsg(cluster_img, encoding="bgr8")
 #    t1 = 0.000000001* img_msg.header.stamp.nsecs + img_msg.header.stamp.secs
@@ -83,11 +85,11 @@ def synchronized_msg_cb(img_msg, cluster_msg):
 if __name__ == '__main__':
     save_imgs_flag = False
     bridge = CvBridge()
-    rospy.init_node('cluster_to_image_node')
-    pub = rospy.Publisher('cluster_image', Image, queue_size=1)
+    rospy.init_node('cluster_to_img')
+    pub = rospy.Publisher('~cluster_image', Image, queue_size=1)
 
-    img_sub = Subscriber('/camera/color/image_raw', Image)
-    clusters_sub = Subscriber('/clusters', Clusters)
+    img_sub = Subscriber('~input', Image)
+    clusters_sub = Subscriber('~clusters', Clusters)
     ats = ApproximateTimeSynchronizer([img_sub, clusters_sub], queue_size = 5, slop=0.000001)
     ats.registerCallback(synchronized_msg_cb)
 
