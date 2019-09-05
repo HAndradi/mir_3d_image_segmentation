@@ -9,5 +9,9 @@
         <param name="output_pc_frame" value="arm_camera_link" type="str" />
     </node>
 
+    <include file="$(find mir_3d_image_segmentation)ros/launch/save_masked_img.launch">
+        <arg name="save_images" value="false" />
+    </include>
+
 </launch>
 
