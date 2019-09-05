@@ -7,7 +7,7 @@ import rospy
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
-from my_pcl_tutorial.msg import Clusters
+from mir_3d_image_segmentation.msg import Clusters
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 
 def synchronized_msg_cb(img_msg, cluster_msg):

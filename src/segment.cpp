@@ -1,9 +1,9 @@
 #include <ros/ros.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
-#include <my_pcl_tutorial/Clusters.h>
-#include <my_pcl_tutorial/Cluster_Pixels.h>
-#include <my_pcl_tutorial/Pixel_Coord.h>
+#include <mir_3d_image_segmentation/Clusters.h>
+#include <mir_3d_image_segmentation/Cluster_Pixels.h>
+#include <mir_3d_image_segmentation/Pixel_Coord.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -114,15 +114,15 @@ cloud_cb (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& input)
   ec.setIndices (segmented_cloud_inliers);
   ec.extract (cluster_indices);
 
-  my_pcl_tutorial::Clusters Clusters;
+  mir_3d_image_segmentation::Clusters Clusters;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
-    my_pcl_tutorial::Cluster_Pixels Cluster_Pixels;
+    mir_3d_image_segmentation::Cluster_Pixels Cluster_Pixels;
     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
     {
       cloud_cluster->points.push_back (cloud_downsampled->points[*pit]); //*
-      my_pcl_tutorial::Pixel_Coord Pixel_Coord;
+      mir_3d_image_segmentation::Pixel_Coord Pixel_Coord;
       Pixel_Coord.y = (*pit / cloud_downsampled->width);
       Pixel_Coord.x = (*pit % cloud_downsampled->width);
       Cluster_Pixels.cluster_pixels.push_back(Pixel_Coord);
@@ -155,7 +155,7 @@ int
 main (int argc, char** argv)
 {
   // Initialize ROS
-  ros::init (argc, argv, "my_pcl_tutorial");
+  ros::init (argc, argv, "mir_3d_image_segmentation");
   ros::NodeHandle nh;
 
   // Create a ROS subscriber for the input point cloud
@@ -165,7 +165,7 @@ main (int argc, char** argv)
   cloud_pub = nh.advertise<sensor_msgs::PointCloud2> ("output", 1);
 
   // Create a ROS publisher for the output point cloud
-  clusters_pub = nh.advertise<my_pcl_tutorial::Clusters> ("clusters", 1);
+  clusters_pub = nh.advertise<mir_3d_image_segmentation::Clusters> ("clusters", 1);
   
   // Spin
   ros::spin ();
