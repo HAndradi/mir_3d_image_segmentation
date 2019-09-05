@@ -160,12 +160,12 @@ int main (int argc, char** argv)
 {
     // Initialize ROS
     ros::init (argc, argv, "pcl_segmentation");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     // Create a ROS subscriber for the input point cloud
     ros::Subscriber sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ> > ("input", 1, cloud_cb);
 
-    nh.param<bool>("debug_mode", publish_output_pc, "false");
+    nh.param<bool>("publish_output_pc", publish_output_pc, "false");
     nh.param<std::string>("output_pc_frame", output_pc_frame, "");
 
     if (publish_output_pc)
