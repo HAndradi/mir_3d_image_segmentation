@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="input_image_topic" default="/arm_cam3d/color/image_raw" />
+    <arg name="cluster_topic" default="pcl_segmentation/clusters" />
+    <arg name="save_images" default="true" />
+    <arg name="save_frequency" default="1" />
+    <arg name="save_image_folder" default="/tmp/img" />
+    <arg name="publish_debug_image" default="true" />
+
+    <node pkg="mir_3d_image_segmentation" type="cluster_to_img" name="cluster_to_img" output="screen">
+        <remap from="~input" to="$(arg input_image_topic)" />
+        <remap from="~clusters" to="$(arg cluster_topic)" />
+
+        <!-- params regarding saving images for data collection purpose -->
+        <param name="save_images" value="$(arg save_images)" type="bool" />
+        <param name="save_frequency" value="$(arg save_frequency)" type="int" />
+        <param name="save_image_folder" value="$(arg save_image_folder)" type="str" />
+
+        <param name="publish_debug_image" value="$(arg publish_debug_image)" type="bool" />
+    </node>
+
+</launch>
+
