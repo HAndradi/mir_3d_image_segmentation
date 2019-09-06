@@ -54,3 +54,5 @@ include_directories(
 
 add_executable(segment ros/src/segment.cpp)
 target_link_libraries(segment ${catkin_LIBRARIES})
+add_executable(closest_obj ros/src/closest_obj.cpp)
+target_link_libraries(closest_obj ${catkin_LIBRARIES})

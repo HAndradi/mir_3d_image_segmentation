@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="input_pointcloud_topic" default="/arm_cam3d/depth_registered/points" />
+
+    <node pkg="mir_3d_image_segmentation" type="closest_obj" name="pcl_closest_obj" output="screen">
+        <remap from="~input" to="$(arg input_pointcloud_topic)" />  
+        <param name="publish_output_pc" value="true" type="bool" />
+        <param name="output_pc_frame" value="d435_arm_camera_depth_optical_frame" type="str" />
+    </node>
+
+</launch>
+
