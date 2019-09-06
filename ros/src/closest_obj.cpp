@@ -1,9 +1,6 @@
 #include <ros/ros.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
-#include <mir_3d_image_segmentation/Clusters.h>
-#include <mir_3d_image_segmentation/Cluster_Pixels.h>
-#include <mir_3d_image_segmentation/Pixel_Coord.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -12,16 +9,15 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/project_inliers.h>
-#include <pcl/surface/convex_hull.h>
-#include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/common/centroid.h>
+#include <pcl/common/norms.h>
+#include <Eigen/Eigenvalues>
+#include <geometry_msgs/PoseStamped.h>
 
 ros::Publisher cloud_pub;
-ros::Publisher clusters_pub;
+ros::Publisher pose_pub;
 bool publish_output_pc;
 std::string output_pc_frame;
 float z_threshold;
@@ -59,42 +55,45 @@ void cloud_cb (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& input)
     pass.filter (*cloud_pass_through2);
 
     /* //Find clusters of the inlier points */
-    /* pcl::search::OrganizedNeighbor<pcl::PointXYZ>::Ptr tree (new pcl::search::OrganizedNeighbor<pcl::PointXYZ>); */
-    /* std::vector<pcl::PointIndices> cluster_indices; */
-    /* pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec; */
-    /* ec.setClusterTolerance (0.02); // 2cm */
-    /* ec.setMinClusterSize (100); */
-    /* ec.setMaxClusterSize (25000); */
-    /* ec.setSearchMethod (tree); */
-    /* ec.setInputCloud (cloud_downsampled); */
-    /* ec.setIndices (segmented_cloud_inliers); */
-    /* ec.extract (cluster_indices); */
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+    std::vector<pcl::PointIndices> clusters_indices;
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+    ec.setClusterTolerance (0.02); // 2cm
+    ec.setMinClusterSize (100);
+    ec.setMaxClusterSize (25000);
+    ec.setSearchMethod (tree);
+    ec.setInputCloud (cloud_pass_through2);
+    ec.extract (clusters_indices);
 
-    /* mir_3d_image_segmentation::Clusters Clusters; */
-    /* pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>); */
-    /* for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it) */
-    /* { */
-    /*     mir_3d_image_segmentation::Cluster_Pixels Cluster_Pixels; */
-    /*     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit) */
-    /*     { */
-    /*         cloud_cluster->points.push_back (cloud_downsampled->points[*pit]); //* */
-    /*         mir_3d_image_segmentation::Pixel_Coord Pixel_Coord; */
-    /*         Pixel_Coord.y = (*pit / cloud_downsampled->width); */
-    /*         Pixel_Coord.x = (*pit % cloud_downsampled->width); */
-    /*         Cluster_Pixels.cluster_pixels.push_back(Pixel_Coord); */
-    /*     } */
-    /*     Clusters.clusters.push_back(Cluster_Pixels); */
-    /* } */  
-    /* cloud_cluster->width = cloud_cluster->points.size (); */
-    /* cloud_cluster->height = 1; */
-    /* cloud_cluster->is_dense = true; */
-    /* //std::cerr << "cluster inliers: " << cloud_cluster->width << std::endl; */
+    float closest_dist = 100.0;
+    Eigen::Vector4f closest_centroid(0.0, 0.0, 0.0, 0.0);
+    Eigen::Vector4f zero_point(0.0, 0.0, 0.0, 0.0);
+    for (size_t i = 0; i < clusters_indices.size(); i++)
+    {
+        const pcl::PointIndices& cluster_indices = clusters_indices[i];
+        Eigen::Vector4f centroid;
+        pcl::compute3DCentroid(*cloud_pass_through2, cluster_indices, centroid);
+        float dist = pcl::L2_Norm(centroid, zero_point, 3);
+        if (dist < closest_dist)
+        {
+            closest_dist = dist;
+            closest_centroid = centroid;
+        }
+    }
+    /* std::cout << closest_dist << std::endl; */
+    /* std::cout << closest_centroid << std::endl; */
+
+    geometry_msgs::PoseStamped pose_stamped;
+    pose_stamped.pose.position.x = closest_centroid[0];
+    pose_stamped.pose.position.y = closest_centroid[1];
+    pose_stamped.pose.position.z = closest_centroid[2];
+    pose_stamped.header.frame_id = input->header.frame_id;
+    pose_stamped.header.stamp = ros::Time::now();
+    pose_pub.publish(pose_stamped);
 
     if (publish_output_pc)
     {
         sensor_msgs::PointCloud2 output;
-        //pcl::toROSMsg(*segmented_cloud, output);
-        /* pcl::toROSMsg(*cloud_cluster, output); */
         pcl::toROSMsg(*cloud_pass_through2, output);
         output.header.frame_id = output_pc_frame;
         output.header.stamp = ros::Time::now();
@@ -103,12 +102,6 @@ void cloud_cb (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& input)
         cloud_pub.publish (output);
     }
 
-    // Publish the cluster data
-    /* pcl_conversions::fromPCL(input->header.stamp, Clusters.header.stamp); */
-    /* Clusters.height = cloud_downsampled->height; */
-    /* Clusters.width = cloud_downsampled->width; */
-    /* Clusters.scale = scale; */
-    /* clusters_pub.publish (Clusters); */
 }
 
 int main (int argc, char** argv)
@@ -131,8 +124,7 @@ int main (int argc, char** argv)
         cloud_pub = nh.advertise<sensor_msgs::PointCloud2> ("output", 1);
     }
 
-    // Create a ROS publisher for the output point cloud
-    /* clusters_pub = nh.advertise<mir_3d_image_segmentation::Clusters> ("clusters", 1); */
+    pose_pub = nh.advertise<geometry_msgs::PoseStamped> ("output_pose", 1);
 
     // Spin
     ros::spin ();
