@@ -3,11 +3,13 @@
 
     <arg name="cmd_vel_topic" default="/cmd_vel_prio_low" />
     <arg name="input_pose_topic" default="pcl_closest_obj/output_pose" />
+    <arg name="camera_link" default="d435_arm_camera_depth_optical_frame" />
 
     <node pkg="mir_3d_image_segmentation" type="closed_loop_pick_base_controller"
         name="closed_loop_pick_base_controller" output="screen">
         <remap from="~input_pose" to="$(arg input_pose_topic)" />
         <remap from="~cmd_vel" to="$(arg cmd_vel_topic)" />
+        <param name="camera_link" value="$(arg camera_link)" type="str" />
 
     </node>
 
