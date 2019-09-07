@@ -15,16 +15,23 @@
 #include <pcl/common/norms.h>
 #include <Eigen/Eigenvalues>
 #include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/String.h>
 
 ros::Publisher cloud_pub;
 ros::Publisher pose_pub;
+ros::Publisher event_out_pub;
 bool publish_output_pc;
+bool listening;
 std::string output_pc_frame;
 float z_threshold;
 float x_threshold;
 
 void cloud_cb (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& input)
 {
+    if (!listening)
+    {
+        return;
+    }
     //Downsample by x3
     int scale = 3;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
@@ -101,7 +108,26 @@ void cloud_cb (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& input)
         // Publish the cloud data
         cloud_pub.publish (output);
     }
+}
 
+void event_in_cb (const std_msgs::String::ConstPtr& msg)
+{
+    if (msg->data == "e_start")
+    {
+        ROS_INFO_STREAM("starting listening");
+        listening = true;
+        std_msgs::String event_out_msg;
+        event_out_msg.data = "e_started";
+        event_out_pub.publish (event_out_msg);
+    }
+    if (msg->data == "e_stop")
+    {
+        ROS_INFO_STREAM("stopping listening");
+        listening = false;
+        std_msgs::String event_out_msg;
+        event_out_msg.data = "e_stopped";
+        event_out_pub.publish (event_out_msg);
+    }
 }
 
 int main (int argc, char** argv)
@@ -110,13 +136,16 @@ int main (int argc, char** argv)
     ros::init (argc, argv, "pcl_closest_obj");
     ros::NodeHandle nh("~");
 
-    // Create a ROS subscriber for the input point cloud
-    ros::Subscriber sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ> > ("input", 1, cloud_cb);
-
+    /* ros params */
     nh.param<bool>("publish_output_pc", publish_output_pc, "true");
     nh.param<std::string>("output_pc_frame", output_pc_frame, "base_link");
     nh.param<float>("x_threshold", x_threshold, 0.05);
     nh.param<float>("z_threshold", z_threshold, 1.0);
+
+    /* Create a ROS subscriber for the input point cloud */
+    ros::Subscriber pc_sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ> > ("input", 1, cloud_cb);
+    ros::Subscriber event_in_sub = nh.subscribe<std_msgs::String> ("event_in", 1, event_in_cb);
+    event_out_pub = nh.advertise<std_msgs::String> ("event_out", 1);
 
     if (publish_output_pc)
     {
