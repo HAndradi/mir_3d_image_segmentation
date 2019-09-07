@@ -15,6 +15,8 @@ class ClosedLoopPickBaseController(object):
         self._obj_pose_sub = rospy.Subscriber('~input_pose', PoseStamped, self.obj_pose_cb)
         self._event_in_sub = rospy.Subscriber('~event_in', String, self.event_in_cb)
         self._cmd_vel_pub = rospy.Publisher('~cmd_vel', Twist, queue_size=1)
+        self._event_out_pub = rospy.Publisher('~event_out', String, queue_size=1)
+        self._closest_obj_event_in_pub = rospy.Publisher('~closest_obj_event_in', String, queue_size=1)
         # self._debug_pose_pub = rospy.Publisher('~debug_pose', PoseStamped, queue_size=1)
         self._camera_link = rospy.get_param('~camera_link')
         self.pose_transformer = mcr_manipulation_measurers_ros.pose_transformer.PoseTransformer()
@@ -48,6 +50,8 @@ class ClosedLoopPickBaseController(object):
             if dist_z < self._stopping_threshold:
                 self._moving = False
                 self._publish_zero_vel()
+                self._event_out_pub.publish(String(data='e_done'))
+                self._closest_obj_event_in_pub.publish(String(data='e_stop'))
                 return
             vel_x = ((dist_z * self.p_x) + self.c_x) / (1.0 + (abs(dist_y) * self.c_y))
             vel_y = dist_y * self.p_y
@@ -62,6 +66,11 @@ class ClosedLoopPickBaseController(object):
         if msg.data == "e_start":
             self._moving = True
             self._should_listen = True
+            self._closest_obj_event_in_pub.publish(String(data='e_start'))
+        elif msg.data == "e_stop":
+            self._moving = False
+            self._closest_obj_event_in_pub.publish(String(data='e_stop'))
+            self._publish_zero_vel() # for safety
 
     def _get_twist(self, x=0.0, y=0.0, theta=0.0):
         """Return twist ros message object.
